@@ -19,7 +19,8 @@ class ProviderClass extends ChangeNotifier {
   bool isConnected = true;
 
   //final String _serverUrl = 'http://192.168.0.187:4000';
-  final String _serverUrl = 'http://172.17.2.20:4000';
+  //final String _serverUrl = 'http://172.17.2.20:4000';
+  final String _serverUrl = 'https://node-1-i9yt.onrender.com';
 
   List<Map<String, dynamic>> get messages => _messages;
 
