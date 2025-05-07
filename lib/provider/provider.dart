@@ -7,24 +7,9 @@ import 'package:flutternode/constant/baseurl.dart';
 import 'package:flutternode/constant/hive_services.dart';
 import 'package:flutternode/models/get_user_model.dart';
 import 'package:flutternode/models/login_user_model.dart';
-import 'package:intl/intl.dart';
-import 'package:socket_io_client/socket_io_client.dart' as io;
 
 class ProviderClass extends ChangeNotifier {
-  late io.Socket socket;
-  bool _isOtherUserTyping = false;
-  final List<Map<String, dynamic>> _messages = [];
-  final Map<String, String> _latestMessages = {};
-  final Map<String, int> _unreadMessageCount = {};
-  bool isConnected = true;
 
-  //final String _serverUrl = 'http://192.168.0.187:4000';
-  //final String _serverUrl = 'http://172.17.2.20:4000';
-  final String _serverUrl = 'https://node-1-i9yt.onrender.com';
-
-  List<Map<String, dynamic>> get messages => _messages;
-
-  bool get isOtherUserTyping => _isOtherUserTyping;
 
   //TEXTEDIT CNOTORLLERS
   TextEditingController nameController = TextEditingController();
@@ -37,7 +22,6 @@ class ProviderClass extends ChangeNotifier {
   UserLoginModel? loginUser;
 
   bool obscureText = true;
-  bool isOtherUserOnline = false;
 
   togglePasswordVisibility() {
     obscureText = !obscureText;
@@ -139,178 +123,5 @@ class ProviderClass extends ChangeNotifier {
     nameController.clear();
   }
 
-  addMessages(data) {
-    messages.add(Map<String, dynamic>.from(data));
-    final fromUserId = data['from'];
-    final messageText = data['message'];
-
-    // SAVE LATEST MESSAGE
-    _latestMessages[fromUserId] = messageText;
-
-    if (fromUserId != HiveService.getTokken().toString()) {
-      _unreadMessageCount[fromUserId] =
-          (_unreadMessageCount[fromUserId] ?? 0) + 1;
-    }
-
-    notifyListeners();
-  }
-
-  String? getLatestMessage(String userId) => _latestMessages[userId];
-
-  int getUnreadMessageCount(String userId) {
-    return _unreadMessageCount[userId] ?? 0;
-  }
-
-  void markMessagesAsRead(String userId) {
-    _unreadMessageCount[userId] = 0;
-    notifyListeners();
-  }
-
-  Future<void> initializeSocket() async {
-    try {
-      socket = io.io(
-        _serverUrl,
-        io.OptionBuilder()
-            .setTransports(['websocket'])
-            .disableAutoConnect()
-            .build(),
-      );
-
-      _setupSocketHandlers();
-      socket.connect();
-    } catch (e) {
-      EasyLoading.showError('Socket init error');
-      debugPrint('Socket initialization error: $e');
-      rethrow;
-    }
-  }
-
-  void _setupSocketHandlers() {
-    socket.onConnect((_) {
-      debugPrint('✅ Connected with ID: ${socket.id}');
-
-      // Emit authentication after connection
-      socket.emit('authenticate', {'userId': HiveService.getTokken()});
-
-      notifyListeners();
-    });
-
-    socket.on('authentication-success', (_) {
-      debugPrint('🔐 Authentication confirmed by server');
-      notifyListeners();
-    });
-
-    socket.on('new-message', (data) {
-      debugPrint('📨 Received message: $data');
-      addMessages(data);
-    });
-
-    socket.on('typing', (data) {
-      debugPrint('✍️ Typing status: $data');
-
-      if (data['from'] != HiveService.getTokken()) {
-        _isOtherUserTyping = data['isTyping'] ?? false;
-        notifyListeners();
-      }
-    });
-
-    socket.on('user-status', (data) {
-      debugPrint('🔔 User status update: $data');
-      isOtherUserOnline = data['status'] == "online";
-      notifyListeners();
-    });
-
-    socket.onError((err) {
-      EasyLoading.showError('Socket error');
-      debugPrint('❌ Socket error: $err');
-    });
-
-    socket.onDisconnect((data) {
-      debugPrint('🔌 Disconnected from socket server:$data');
-      isOtherUserOnline = data['status'] == "offline";
-      notifyListeners();
-    });
-  }
-
-  Future<void> sendMessage(String receiverId, String message) async {
-    try {
-      final messageData = {
-        'to': receiverId,
-        'message': message,
-        'from': HiveService.getTokken(),
-        'timestamp': DateFormat.jm().format(DateTime.now()),
-      };
-
-      debugPrint('📤 Sending message: $messageData');
-      socket.emit('send-message', messageData);
-      // addMessages(messageData);
-    } catch (e) {
-      debugPrint('❌ Error sending message: $e');
-      rethrow;
-    }
-  }
-
-  void sendTypingStatus(String receiverId, bool isTyping) {
-    socket.emit('typing', {
-      'from': HiveService.getTokken(),
-      'to': receiverId,
-      'isTyping': isTyping,
-    });
-  }
-
-  void disconnect() {
-    socket.disconnect();
-    debugPrint('🔌 Manually disconnected');
-    notifyListeners();
-  }
-
-  IconData getStatusIcon(String? status) {
-    switch (status) {
-      case 'sent':
-        return Icons.check;
-      case 'delivered':
-        return Icons.done_all;
-      case 'read':
-        return Icons.done_all;
-      default:
-        return Icons.check;
-    }
-  }
-
-  Color getStatusColor(String? status) {
-    switch (status) {
-      case 'read':
-        return Colors.lightGreenAccent.shade400; // Green
-      default:
-        return Colors.white70; // Grey/white for sent/delivered
-    }
-  }
-
-  // Helper method to safely convert dynamic to String
-  String getStringFromDynamic(dynamic value) {
-    if (value == null) return '';
-    if (value is String) return value;
-    if (value is Map)
-      return value['userId']?.toString() ?? ''; // Handle user object case
-    return value.toString();
-  }
-
-  // Helper method to format timestamp
-  String formatTimestamp(dynamic timestamp) {
-    try {
-      if (timestamp == null) return '';
-      DateTime date;
-      if (timestamp is String) {
-        date = DateTime.parse(timestamp).toLocal();
-      } else if (timestamp is DateTime) {
-        date = timestamp.toLocal();
-      } else {
-        return '';
-      }
-
-      return DateFormat.jm().format(date); // e.g., 4:05 AM
-    } catch (e) {
-      return '';
-    }
-  }
+  
 }

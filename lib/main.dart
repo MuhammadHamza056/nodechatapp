@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutternode/constant/hive_services.dart';
 import 'package:flutternode/provider/provider.dart';
+import 'package:flutternode/provider/socket_service.dart';
 import 'package:flutternode/router/app_routes.dart' show router;
 import 'package:provider/provider.dart';
 
@@ -18,13 +19,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => ProviderClass())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => ProviderClass()),
+        ChangeNotifierProvider(create: (_) => SocketService()),
+      ],
       child: MaterialApp.router(
         title: 'Flutter Demo',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         ),
-
         debugShowCheckedModeBanner: false,
         routerConfig: router,
         builder: EasyLoading.init(),
