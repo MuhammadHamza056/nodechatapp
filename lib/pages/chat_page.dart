@@ -187,7 +187,7 @@ class ChatPage extends StatelessWidget {
                 },
               ),
             ),
-            // Widget for User Typing Indicator
+            // WIDGET FOR USER TYPING INDICATOR
             Consumer<ProviderClass>(
               builder: (context, provider, child) {
                 return provider.isOtherUserTyping

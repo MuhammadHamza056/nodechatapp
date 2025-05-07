@@ -144,7 +144,7 @@ class ProviderClass extends ChangeNotifier {
     final fromUserId = data['from'];
     final messageText = data['message'];
 
-    // Save latest message
+    // SAVE LATEST MESSAGE
     _latestMessages[fromUserId] = messageText;
 
     if (fromUserId != HiveService.getTokken().toString()) {
@@ -225,9 +225,9 @@ class ProviderClass extends ChangeNotifier {
       debugPrint('❌ Socket error: $err');
     });
 
-    socket.onDisconnect((_) {
-      debugPrint('🔌 Disconnected from socket server');
-      isOtherUserOnline = false;
+    socket.onDisconnect((data) {
+      debugPrint('🔌 Disconnected from socket server:$data');
+      isOtherUserOnline = data['status'] == "offline";
       notifyListeners();
     });
   }
