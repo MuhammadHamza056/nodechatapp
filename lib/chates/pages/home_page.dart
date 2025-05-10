@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutternode/pages/chat_page.dart';
-import 'package:flutternode/provider/provider.dart';
-import 'package:flutternode/provider/socket_service.dart';
+import 'package:flutternode/chates/pages/chat_page.dart';
+import 'package:flutternode/chates/provider/provider.dart';
+import 'package:flutternode/chates/provider/socket_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -32,7 +32,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.blue,
         surfaceTintColor: Colors.white,
         title: Row(
-          children: [Text("Home ", style: TextStyle(color: Colors.white))],
+          children: [Text("Chats", style: TextStyle(color: Colors.white))],
         ),
 
         actions: [

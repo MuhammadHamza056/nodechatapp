@@ -1,12 +1,13 @@
 // lib/router/app_router.dart
+import 'package:flutternode/chates/pages/home_page.dart';
+import 'package:flutternode/chates/pages/login_page.dart';
+import 'package:flutternode/chates/pages/sign_up_page.dart';
 import 'package:flutternode/constant/hive_services.dart';
-import 'package:flutternode/pages/home_page.dart';
-import 'package:flutternode/pages/login_page.dart';
-import 'package:flutternode/pages/sign_up_page.dart';
+import 'package:flutternode/dashboard/pages/dashboard.dart';
 import 'package:go_router/go_router.dart';
 
 final router = GoRouter(
-  initialLocation: '/login',
+  initialLocation: '/dashboard',
   routes: [
     GoRoute(
       path: '/login',
@@ -15,10 +16,16 @@ final router = GoRouter(
         return HiveService.getUserLogin() ? HomePage() : LoginPage();
       },
     ),
+
     GoRoute(
       path: '/signup',
       name: 'signup',
       builder: (context, state) => const SignUpPage(),
+    ),
+    GoRoute(
+      path: '/dashboard',
+      name: 'dashboard',
+      builder: (context, state) => const DashboardScreen(),
     ),
     GoRoute(
       path: '/home',

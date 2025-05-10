@@ -1,36 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:flutternode/provider/provider.dart';
+import 'package:flutternode/chates/provider/provider.dart';
 import 'package:flutternode/widget/custom_textifeld.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-class SignUpPage extends StatelessWidget {
-  const SignUpPage({super.key});
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ProviderClass>(context, listen: false);
     return Scaffold(
       backgroundColor: Colors.white,
+
       body: SingleChildScrollView(
         child: Column(
           spacing: 20,
           children: [
-            // Header
             Container(
               width: double.infinity,
               height: 200,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.blue,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(40),
                   bottomRight: Radius.circular(40),
                 ),
               ),
               alignment: Alignment.center,
               child: const Text(
-                'Signup',
+                'Login',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -38,47 +38,24 @@ class SignUpPage extends StatelessWidget {
                 ),
               ),
             ),
-
-            // FORM FIELDS AND BUTTON
+            // Login Fields & Button
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 spacing: 20,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Welcome",
+                  Text(
+                    "Welcome Back",
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
                   ),
-                  const Text(
-                    "Create a new account",
+                  Text(
+                    "Sign in to continue",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: Colors.grey,
                     ),
-                  ),
-                  Consumer<ProviderClass>(
-                    builder: (context, provider, child) {
-                      return CustomTextField(
-                        borderRadius: 12,
-                        borderColor: Colors.grey,
-                        controller: provider.nameController,
-                        labelText: 'Name',
-                        obscureText: false,
-                        keyboardType: TextInputType.name,
-                        prefixIcon: const Icon(
-                          Icons.person_2_outlined,
-                          color: Colors.grey,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your name';
-                          }
-                          return null;
-                        },
-                      );
-                    },
                   ),
                   Consumer<ProviderClass>(
                     builder: (context, provider, child) {
@@ -93,16 +70,14 @@ class SignUpPage extends StatelessWidget {
                           Icons.email_outlined,
                           color: Colors.grey,
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
-                          }
-                          return null;
-                        },
+                        validator:
+                            (value) =>
+                                value == null || value.isEmpty
+                                    ? 'Please enter your email'
+                                    : null,
                       );
                     },
                   ),
-
                   Consumer<ProviderClass>(
                     builder: (context, provider, child) {
                       return CustomTextField(
@@ -129,7 +104,6 @@ class SignUpPage extends StatelessWidget {
                       );
                     },
                   ),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -144,30 +118,26 @@ class SignUpPage extends StatelessWidget {
                       onPressed: () async {
                         if (provider.emailController.text.isNotEmpty &&
                             provider.passwordController.text.isNotEmpty) {
-                          bool success = await provider.signUp();
-                          if (success) {
-                            context.go('/login');
-                            provider.clearValues();
-                          }
+                          bool success = await provider.login();
+                          if (success) context.go('/dashboard');
                         } else {
                           EasyLoading.showError('Please fill the fields above');
                         }
                       },
-                      child: const Text("Signup"),
+                      child: const Text("Login"),
                     ),
                   ),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Already have an account? "),
+                      const Text("Create a new account? "),
                       GestureDetector(
                         onTap: () {
-                          context.go('/login');
+                          context.go('/signup');
                           provider.clearValues();
                         },
                         child: const Text(
-                          "LOGIN",
+                          "SIGNUP",
                           style: TextStyle(color: Colors.green),
                         ),
                       ),

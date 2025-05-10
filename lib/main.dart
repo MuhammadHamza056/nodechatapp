@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutternode/chates/provider/provider.dart';
+import 'package:flutternode/chates/provider/socket_service.dart';
 import 'package:flutternode/constant/hive_services.dart';
-import 'package:flutternode/provider/provider.dart';
-import 'package:flutternode/provider/socket_service.dart';
+import 'package:flutternode/dashboard/provider/provider.dart';
+import 'package:flutternode/profile/provider/provider.dart';
 import 'package:flutternode/router/app_routes.dart' show router;
 import 'package:provider/provider.dart';
 
@@ -22,6 +24,8 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => ProviderClass()),
         ChangeNotifierProvider(create: (_) => SocketService()),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ],
       child: MaterialApp.router(
         title: 'Flutter Demo',

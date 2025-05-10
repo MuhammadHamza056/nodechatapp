@@ -5,8 +5,8 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutternode/constant/base_client.dart';
 import 'package:flutternode/constant/baseurl.dart';
 import 'package:flutternode/constant/hive_services.dart';
-import 'package:flutternode/models/get_user_model.dart';
-import 'package:flutternode/models/login_user_model.dart';
+import 'package:flutternode/chates/models/get_user_model.dart';
+import 'package:flutternode/chates/models/login_user_model.dart';
 
 class ProviderClass extends ChangeNotifier {
   //TEXTEDIT CNOTORLLERS
