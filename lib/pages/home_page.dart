@@ -59,7 +59,6 @@ class _HomePageState extends State<HomePage> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 🔵 Connection Status Widget
                   Consumer<SocketService>(
                     builder: (context, provider, child) {
                       return Row(
@@ -111,40 +110,48 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                 ),
                               );
+                              provider1.saveTergetUserid(user.id.toString());
                             },
                             child: Card(
                               color: Colors.white,
                               child: ListTile(
-                                leading: Stack(
-                                  children: [
-                                    CircleAvatar(
-                                      backgroundColor: Colors.blue,
-                                      child: Text(
-                                        '${index + 1}',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                    if (provider1.isOtherUserOnline)
-                                      Positioned(
-                                        right: 0,
-                                        bottom: 0,
-                                        child: Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: BoxDecoration(
-                                            color: Colors.green,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
+                                leading: Consumer<SocketService>(
+                                  builder: (context, provider, child) {
+                                    return Stack(
+                                      children: [
+                                        CircleAvatar(
+                                          backgroundColor: Colors.blue,
+                                          child: Text(
+                                            '${index + 1}',
+                                            style: TextStyle(
                                               color: Colors.white,
-                                              width: 2,
                                             ),
                                           ),
                                         ),
-                                      ),
-                                  ],
+                                        if (provider.isOtherUserOnline)
+                                          Positioned(
+                                            right: 0,
+                                            bottom: 0,
+                                            child: Container(
+                                              width: 10,
+                                              height: 10,
+                                              decoration: BoxDecoration(
+                                                color: Colors.green,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: Colors.white,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    );
+                                  },
                                 ),
-                                trailing:
-                                    provider1.getUnreadMessageCount(
+                                trailing: Consumer<SocketService>(
+                                  builder: (context, provider, child) {
+                                    return provider1.getUnreadMessageCount(
                                               user.id.toString(),
                                             ) >
                                             0
@@ -164,14 +171,20 @@ class _HomePageState extends State<HomePage> {
                                             ),
                                           ),
                                         )
-                                        : const SizedBox.shrink(),
+                                        : const SizedBox.shrink();
+                                  },
+                                ),
                                 title: Text(user.name ?? 'No name'),
-                                subtitle: Text(
-                                  provider1.getLatestMessage(
-                                        user.id.toString(),
-                                      ) ??
-                                      user.createdAt?.toIso8601String() ??
-                                      'No message yet',
+                                subtitle: Consumer<SocketService>(
+                                  builder: (context, provider, child) {
+                                    return Text(
+                                      provider.getLatestMessage(
+                                            user.id.toString(),
+                                          ) ??
+                                          user.createdAt?.toIso8601String() ??
+                                          'No message yet',
+                                    );
+                                  },
                                 ),
                               ),
                             ),

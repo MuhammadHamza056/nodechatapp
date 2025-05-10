@@ -9,8 +9,6 @@ import 'package:flutternode/models/get_user_model.dart';
 import 'package:flutternode/models/login_user_model.dart';
 
 class ProviderClass extends ChangeNotifier {
-
-
   //TEXTEDIT CNOTORLLERS
   TextEditingController nameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
@@ -117,11 +115,11 @@ class ProviderClass extends ChangeNotifier {
     }
   }
 
+  
+
   clearValues() {
     emailController.clear();
     passwordController.clear();
     nameController.clear();
   }
-
-  
 }

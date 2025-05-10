@@ -1,19 +1,24 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutternode/constant/file_upload_service.dart';
 import 'package:flutternode/constant/hive_services.dart';
-import 'package:flutternode/utils/life_cycle.dart';
+import 'package:flutternode/utils/chat_status.dart';
 import 'package:intl/intl.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 class SocketService extends ChangeNotifier {
   late io.Socket socket;
-  final String _serverUrl = 'https://node-1-i9yt.onrender.com';
+  //final String _serverUrl = 'http://192.168.0.187:3000';
+  final String _serverUrl = 'http://172.17.2.20:3000';
+  //final String _serverUrl = 'https://node-1-i9yt.onrender.com';
+
+  String? targetUserId;
+  String? fileUrl;
 
   // Connection state variables
   bool isConnected = false;
-  int _reconnectionAttempts = 0;
   static const int _maxReconnectionAttempts = 5;
-  DateTime? _lastConnectionAttempt;
 
   // Message state variables
   final List<Map<String, dynamic>> _messages = [];
@@ -22,6 +27,7 @@ class SocketService extends ChangeNotifier {
   final Map<String, int> _unreadMessageCount = {};
   bool isOtherUserOnline = false;
   DateTime? lastSeen;
+  final player = AudioPlayer();
 
   // Getters
   List<Map<String, dynamic>> get messages => _messages;
@@ -32,6 +38,55 @@ class SocketService extends ChangeNotifier {
   isConected(bool status) {
     isConnected = status;
     notifyListeners();
+  }
+
+  saveTergetUserid(String id) {
+    targetUserId = id;
+    notifyListeners();
+  }
+
+  void playTypingSound() async {
+    player.stop();
+    if (ChatState.isChatScreenActive) {
+      player.play(AssetSource('typing_sound.wav'));
+    }
+  }
+
+  Future<void> playMessageSound() async {
+    try {
+      // Only play sound if NOT in chat screen
+      if (!ChatState.isChatScreenActive) {
+        await player.stop();
+        await player.setVolume(1.0);
+
+        // Load and play the sound
+        await player.setSourceAsset('message.mp3');
+        await player.play(AssetSource('message.mp3'));
+        await player.onPlayerComplete.first;
+      }
+    } catch (e) {
+      EasyLoading.showError(e.toString());
+    }
+  }
+
+  imageUrl(imageUrl) {
+    fileUrl = imageUrl;
+    notifyListeners();
+  }
+
+  //FUNCTION TO UPLOAD THE FILE TO SERVER
+  uploadFile() async {
+    EasyLoading.show(status: 'Uploading File...');
+    try {
+      FileUploadService.sendFile(
+        targetUserId.toString(),
+        HiveService.getTokken(),
+      );
+    } catch (e) {
+      EasyLoading.showError(e.toString());
+    } finally {
+      EasyLoading.dismiss();
+    }
   }
 
   // Initialize socket connection
@@ -47,13 +102,12 @@ class SocketService extends ChangeNotifier {
       );
 
       _setupSocketHandlers();
-      _setupAppLifecycleListeners();
-      _lastConnectionAttempt = DateTime.now();
+
       socket.connect();
     } catch (e) {
       EasyLoading.showError('Socket init error');
       debugPrint('Socket initialization error: $e');
-      _attemptReconnection();
+
       rethrow;
     }
   }
@@ -63,7 +117,6 @@ class SocketService extends ChangeNotifier {
     socket.onConnect((_) {
       debugPrint('✅ Connected with ID: ${socket.id}');
       isConected(true);
-      _reconnectionAttempts = 0;
 
       // Authenticate with server
       socket.emit('authenticate', {
@@ -80,98 +133,60 @@ class SocketService extends ChangeNotifier {
     });
 
     socket.on('new-message', (data) {
-      debugPrint('📨 Received message: $data');
-      addMessages(data);
+      final currentUserId = HiveService.getTokken();
+
+      if (data['from'] == currentUserId) {
+        // Sender receives their own message with status
+        addMessages(data); // ✅ Add only once, with correct status
+      } else if (data['to'] == currentUserId) {
+        // Receiver gets message
+        addMessages(data);
+        playMessageSound();
+      }
+
+      debugPrint('📨 Processed message: $data');
     });
 
     socket.on('typing', (data) {
       debugPrint('✍️ Typing status: $data');
       if (data['from'] != HiveService.getTokken()) {
         _isOtherUserTyping = data['isTyping'] ?? false;
+        playTypingSound();
         notifyListeners();
       }
     });
 
-    socket.on('user-status', (data) {
+    socket.on('user_status', (data) {
       debugPrint('🔔 User status update: $data');
-      userStatus(data);
+      if (data['status'] == 'online') {
+        isOtherUserOnline = true;
+      } else {
+        isOtherUserOnline = false;
+      }
+      notifyListeners();
     });
 
     socket.onError((err) {
       debugPrint('❌ Socket error: $err');
       EasyLoading.showError('Connection error');
       isConected(false);
-
-      _attemptReconnection();
+      notifyListeners();
     });
-    socket.on('reconnect_attempt', (attempt) {
-      debugPrint('🔄 Reconnect attempt #$attempt');
-      isConected(true);
-    });
-
     socket.onReconnect((_) {
       isConected(true);
+      notifyListeners();
+    });
+    socket.on("new_file", (data) {
+      fileUrl = data["fileUrl"];
+      imageUrl(data["fileUrl"]);
+      addMessages(data);
+      notifyListeners();
     });
 
     socket.onDisconnect((data) {
       debugPrint('🔌 Disconnected from socket server: $data');
       isConected(false);
-      userStatus({'status': 'offline'});
-      _attemptReconnection();
     });
-
-    // Ping-pong for connection health
-    socket.on('ping', (_) => socket.emit('pong'));
-    socket.on('pong', (_) => debugPrint('🏓 Pong received'));
-  }
-
-  // Handle app lifecycle changes
-  _setupAppLifecycleListeners() {
-    WidgetsBinding.instance.addObserver(
-      LifecycleEventHandler(
-        resumeCallBack: () async {
-          debugPrint('App resumed - updating status to online');
-          if (!socket.connected) {
-            debugPrint('Socket not connected on resume, reconnecting...');
-            socket.connect();
-          }
-          socket.emit('update-status', {
-            'userId': HiveService.getTokken(),
-            'status': 'online',
-          });
-        },
-        suspendingCallBack: () async {
-          debugPrint('App suspended - updating status to away');
-          socket.emit('update-status', {
-            'userId': HiveService.getTokken(),
-            'status': 'away',
-            'lastSeen': DateTime.now().toIso8601String(),
-          });
-        },
-      ),
-    );
-  }
-
-  // Reconnection logic
-  void _attemptReconnection() {
-    if (_reconnectionAttempts < _maxReconnectionAttempts) {
-      final now = DateTime.now();
-      final lastAttempt = _lastConnectionAttempt ?? now;
-
-      // Don't attempt too frequently
-      if (now.difference(lastAttempt).inSeconds > 5) {
-        _reconnectionAttempts++;
-        _lastConnectionAttempt = now;
-        debugPrint(
-          '♻️ Attempting reconnection (attempt $_reconnectionAttempts)',
-        );
-        socket.connect();
-      }
-    } else {
-      debugPrint('❌ Max reconnection attempts reached');
-      EasyLoading.showInfo('Connection lost. Please check your network.');
-    }
-    notifyListeners();
   }
 
   // Message handling
@@ -192,28 +207,6 @@ class SocketService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // User status handling
-  void userStatus(data) {
-    final newStatus = data['status'];
-    if (newStatus == 'online') {
-      isOtherUserOnline = true;
-      lastSeen = null;
-    } else if (newStatus == 'offline') {
-      isOtherUserOnline = false;
-      lastSeen =
-          data['lastSeen'] != null
-              ? DateTime.parse(data['lastSeen'])
-              : DateTime.now();
-    } else if (newStatus == 'away') {
-      isOtherUserOnline = false;
-      lastSeen =
-          data['lastSeen'] != null
-              ? DateTime.parse(data['lastSeen'])
-              : DateTime.now();
-    }
-    notifyListeners();
-  }
-
   // Message sending
   Future<void> sendMessage(String receiverId, String message) async {
     try {
@@ -226,7 +219,6 @@ class SocketService extends ChangeNotifier {
 
       debugPrint('📤 Sending message: $messageData');
       socket.emit('send-message', messageData);
-      addMessages(messageData);
     } catch (e) {
       debugPrint('❌ Error sending message: $e');
       EasyLoading.showError('Failed to send message');
@@ -272,21 +264,6 @@ class SocketService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Clean disconnect
-  Future<void> disconnectSocket() async {
-    try {
-      socket.emit('manual-disconnect', {
-        'userId': HiveService.getTokken(),
-        'lastSeen': DateTime.now().toIso8601String(),
-      });
-      socket.clearListeners();
-      socket.disconnect();
-      _reconnectionAttempts = 0;
-    } catch (e) {
-      debugPrint('Disconnection error: $e');
-    }
-  }
-
   // Helper methods
   String getStringFromDynamic(dynamic value) {
     if (value == null) return '';
@@ -314,17 +291,7 @@ class SocketService extends ChangeNotifier {
 
   @override
   void dispose() {
-    disconnectSocket();
-    WidgetsBinding.instance.removeObserver(
-      LifecycleEventHandler(
-        resumeCallBack: () {
-          return EasyLoading.showSuccess('resume');
-        },
-        suspendingCallBack: () {
-          return EasyLoading.showSuccess('suspend');
-        },
-      ),
-    );
+    socket.disconnect();
     super.dispose();
   }
 }
