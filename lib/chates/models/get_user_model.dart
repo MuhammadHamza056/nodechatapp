@@ -39,6 +39,7 @@ class Datum {
     String? email;
     String? password;
     DateTime? createdAt;
+    DateTime? lastSeen;
 
     Datum({
         this.id,
@@ -47,6 +48,7 @@ class Datum {
         this.email,
         this.password,
         this.createdAt,
+        this.lastSeen,
     });
 
     factory Datum.fromJson(Map<String, dynamic> json) => Datum(
@@ -56,6 +58,7 @@ class Datum {
         email: json["email"],
         password: json["password"],
         createdAt: json["createdAt"] == null ? null : DateTime.parse(json["createdAt"]),
+        lastSeen: json["lastSeen"] == null ? null : DateTime.parse(json["lastSeen"]),
     );
 
     Map<String, dynamic> toJson() => {
@@ -65,5 +68,6 @@ class Datum {
         "email": email,
         "password": password,
         "createdAt": createdAt?.toIso8601String(),
+        "lastSeen": lastSeen?.toIso8601String(),
     };
 }

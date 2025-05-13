@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutternode/constant/camera_dailog.dart';
 import 'package:flutternode/profile/provider/provider.dart';
 import 'package:flutternode/widget/custom_Elevated_Button.dart';
@@ -18,7 +19,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final prov = Provider.of<ProfileProvider>(context);
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        surfaceTintColor: Colors.white,
+        backgroundColor: Colors.white,
         title: const Text('Profile'),
         actions: [
           Consumer<ProfileProvider>(
@@ -36,21 +40,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
+          spacing: 20,
           children: [
             // Profile Image Section
             Stack(
               alignment: Alignment.bottomRight,
               children: [
-                CircleAvatar(
-                  radius: 60,
-                  backgroundImage: NetworkImage(
-                    'https://randomuser.me/api/portraits/men/1.jpg',
-                  ),
+                Consumer<ProfileProvider>(
+                  builder: (context, prov, child) {
+                    return GestureDetector(
+                      onLongPress: () {
+                        prov.clearImage();
+                      },
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundImage:
+                            prov.selectedImage != null
+                                ? FileImage(prov.selectedImage!)
+                                : AssetImage('person.png') as ImageProvider,
+                      ),
+                    );
+                  },
                 ),
                 if (prov.isEditing)
                   FloatingActionButton.small(
+                    backgroundColor: Colors.white,
+
                     onPressed: () {
-                      // Add image picker functionality here
                       CameraDailog().showImageSourceDialog(context);
                     },
                     child: const Icon(
@@ -70,7 +86,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               enabled: prov.isEditing,
               obscureText: false,
             ),
-            const SizedBox(height: 20),
 
             // Email Section (read-only)
             CustomTextField(
@@ -80,7 +95,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               obscureText: false,
               controller: prov.emailController,
             ),
-            const SizedBox(height: 20),
 
             // Bio Section
             CustomTextField(
@@ -91,7 +105,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               enabled: prov.isEditing,
               maxLines: 3,
             ),
-            const SizedBox(height: 30),
 
             // Save Button (only visible when editing)
             if (prov.isEditing)
@@ -101,7 +114,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   foregroundColor: Colors.white,
                   backgroundColor: Colors.blue,
                   text: 'Save',
-                  onPressed: () {},
+                  onPressed: () {
+                    if (prov.usernameController.text.isNotEmpty ||
+                        prov.emailController.text.isNotEmpty ||
+                        prov.bioController.text.isNotEmpty) {
+                      
+                    } else {
+                      EasyLoading.showError('please fill the data');
+                    }
+                  },
                 ),
               ),
           ],

@@ -84,114 +84,107 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   const SizedBox(height: 10),
-
-                  // 📄 List or "No users"
-                  if (users.isEmpty)
-                    const Text(
-                      'No users available',
-                      style: TextStyle(color: Colors.grey),
-                    )
-                  else
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: users.length,
-                        itemBuilder: (context, index) {
-                          final user = users[index];
-                          return GestureDetector(
-                            onTap: () {
-                              provider1.markMessagesAsRead(user.id.toString());
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => ChatPage(
-                                        userName: user.name.toString(),
-                                        userId: user.id.toString(),
-                                      ),
-                                ),
-                              );
-                              provider1.saveTergetUserid(user.id.toString());
-                            },
-                            child: Card(
-                              color: Colors.white,
-                              child: ListTile(
-                                leading: Consumer<SocketService>(
-                                  builder: (context, provider, child) {
-                                    return Stack(
-                                      children: [
-                                        CircleAvatar(
-                                          backgroundColor: Colors.blue,
-                                          child: Text(
-                                            '${index + 1}',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                            ),
-                                          ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: users.length,
+                      itemBuilder: (context, index) {
+                        final user = users[index];
+                        return GestureDetector(
+                          onTap: () {
+                            provider1.markMessagesAsRead(user.id.toString());
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => ChatPage(
+                                      userName: user.name.toString(),
+                                      userId: user.id.toString(),
+                                    ),
+                              ),
+                            );
+                            provider1.saveTergetUserid(user.id.toString());
+                          },
+                          child: Card(
+                            color: Colors.white,
+                            child: ListTile(
+                              leading: Consumer<SocketService>(
+                                builder: (context, provider, child) {
+                                  final isOnline = provider.isUserOnline(
+                                    user.id.toString(),
+                                  );
+                                  return Stack(
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundColor: Colors.blue,
+                                        child: Text(
+                                          '${index + 1}',
+                                          style: TextStyle(color: Colors.white),
                                         ),
-                                        if (provider.isOtherUserOnline)
-                                          Positioned(
-                                            right: 0,
-                                            bottom: 0,
-                                            child: Container(
-                                              width: 10,
-                                              height: 10,
-                                              decoration: BoxDecoration(
-                                                color: Colors.green,
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 2,
-                                                ),
+                                      ),
+                                      if (isOnline)
+                                        Positioned(
+                                          right: 0,
+                                          bottom: 0,
+                                          child: Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: BoxDecoration(
+                                              color: Colors.green,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: Colors.white,
+                                                width: 2,
                                               ),
                                             ),
                                           ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                                trailing: Consumer<SocketService>(
-                                  builder: (context, provider, child) {
-                                    return provider1.getUnreadMessageCount(
-                                              user.id.toString(),
-                                            ) >
-                                            0
-                                        ? CircleAvatar(
-                                          backgroundColor: Colors.red,
-                                          radius: 12,
-                                          child: Text(
-                                            provider1
-                                                .getUnreadMessageCount(
-                                                  user.id.toString(),
-                                                )
-                                                .toString(),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        )
-                                        : const SizedBox.shrink();
-                                  },
-                                ),
-                                title: Text(user.name ?? 'No name'),
-                                subtitle: Consumer<SocketService>(
-                                  builder: (context, provider, child) {
-                                    return Text(
-                                      provider.getLatestMessage(
+                                        ),
+                                    ],
+                                  );
+                                },
+                              ),
+                              trailing: Consumer<SocketService>(
+                                builder: (context, provider, child) {
+                                  return provider1.getUnreadMessageCount(
                                             user.id.toString(),
-                                          ) ??
-                                          user.createdAt?.toIso8601String() ??
-                                          'No message yet',
-                                    );
-                                  },
-                                ),
+                                          ) >
+                                          0
+                                      ? CircleAvatar(
+                                        backgroundColor: Colors.red,
+                                        radius: 12,
+                                        child: Text(
+                                          provider1
+                                              .getUnreadMessageCount(
+                                                user.id.toString(),
+                                              )
+                                              .toString(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      )
+                                      : const SizedBox.shrink();
+                                },
+                              ),
+                              title: Text(user.name ?? 'No name'),
+                              subtitle: Consumer<SocketService>(
+                                builder: (context, provider, child) {
+                                  return Text(
+                                    provider.getLatestMessage(
+                                          user.id.toString(),
+                                        ) ??
+                                        user.createdAt?.toIso8601String() ??
+                                        'No message yet',
+                                  );
+                                },
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
+                  ),
                 ],
               );
             },

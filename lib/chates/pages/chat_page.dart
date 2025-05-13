@@ -62,10 +62,9 @@ class _ChatPageState extends State<ChatPage> {
         return true;
       },
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(
-            kToolbarHeight + 8,
-          ), 
+          preferredSize: const Size.fromHeight(kToolbarHeight + 8),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
@@ -83,10 +82,16 @@ class _ChatPageState extends State<ChatPage> {
                 children: [
                   IconButton(
                     icon: const Icon(CupertinoIcons.back),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      provider.markMessagesAsRead(widget.userId.toString());
+                      Navigator.pop(context);
+                    },
                   ),
                   Consumer<SocketService>(
                     builder: (context, provider, child) {
+                      final isOnline = provider.isUserOnline(
+                        widget.userId.toString(),
+                      );
                       return Stack(
                         alignment: Alignment.center,
                         children: [
@@ -97,7 +102,7 @@ class _ChatPageState extends State<ChatPage> {
                               style: const TextStyle(color: Colors.white),
                             ),
                           ),
-                          if (provider.isOtherUserOnline)
+                          if (isOnline)
                             Positioned(
                               right: 0,
                               bottom: 0,
@@ -133,15 +138,20 @@ class _ChatPageState extends State<ChatPage> {
                               padding: EdgeInsets.only(
                                 bottom: isTyping ? 4.0 : 0.0,
                               ),
-                              child: Text(
-                                provider.isConnected
-                                    ? widget.userName
-                                    : 'Connecting...',
-                                style: const TextStyle(
-                                  fontSize: 18, // Slightly smaller for app bar
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                              child: Consumer<SocketService>(
+                                builder: (context, provider, child) {
+                                  return Text(
+                                    provider.isConnected
+                                        ? widget.userName
+                                        : 'Connecting...',
+                                    style: const TextStyle(
+                                      fontSize:
+                                          18, // Slightly smaller for app bar
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  );
+                                },
                               ),
                             ),
                             AnimatedSwitcher(

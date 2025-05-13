@@ -24,6 +24,7 @@ class SocketService extends ChangeNotifier {
   final List<Map<String, dynamic>> _messages = [];
   bool _isOtherUserTyping = false;
   final Map<String, String> _latestMessages = {};
+  final Set<String> _onlineUsers = {};
   final Map<String, int> _unreadMessageCount = {};
   bool isOtherUserOnline = false;
   DateTime? lastSeen;
@@ -33,6 +34,7 @@ class SocketService extends ChangeNotifier {
   List<Map<String, dynamic>> get messages => _messages;
   bool get isOtherUserTyping => _isOtherUserTyping;
   String? getLatestMessage(String userId) => _latestMessages[userId];
+  bool isUserOnline(String userId) => _onlineUsers.contains(userId);
   int getUnreadMessageCount(String userId) => _unreadMessageCount[userId] ?? 0;
 
   isConected(bool status) {
@@ -157,12 +159,16 @@ class SocketService extends ChangeNotifier {
     });
 
     socket.on('user_status', (data) {
+      final userId = data['userId'];
+      final status = data['status'];
       debugPrint('🔔 User status update: $data');
-      if (data['status'] == 'online') {
-        isOtherUserOnline = true;
+
+      if (status == 'online') {
+        _onlineUsers.add(userId);
       } else {
-        isOtherUserOnline = false;
+        _onlineUsers.remove(userId);
       }
+
       notifyListeners();
     });
 
@@ -180,6 +186,7 @@ class SocketService extends ChangeNotifier {
       fileUrl = data["fileUrl"];
       imageUrl(data["fileUrl"]);
       addMessages(data);
+      playMessageSound();
       notifyListeners();
     });
 
