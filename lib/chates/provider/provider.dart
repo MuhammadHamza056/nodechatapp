@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutternode/chates/models/get_user_model.dart';
+import 'package:flutternode/chates/models/login_user_model.dart';
 import 'package:flutternode/constant/base_client.dart';
 import 'package:flutternode/constant/baseurl.dart';
 import 'package:flutternode/constant/hive_services.dart';
-import 'package:flutternode/chates/models/get_user_model.dart';
-import 'package:flutternode/chates/models/login_user_model.dart';
 
 class ProviderClass extends ChangeNotifier {
   //TEXTEDIT CNOTORLLERS
@@ -88,12 +88,13 @@ class ProviderClass extends ChangeNotifier {
   //THIS IS LOGOUT FUNCTION
   logOut() async {
     HiveService.deleteHiveData();
+
     notifyListeners();
   }
 
   //THIS IS FUNCTION TO GET ALL THE USERS
   getUsers() async {
-    EasyLoading.show(status: 'Loading users...');
+    //  EasyLoading.show(status: 'Loading users...');
     try {
       final response = await BaseClients.get(
         baseUrl,
@@ -106,7 +107,7 @@ class ProviderClass extends ChangeNotifier {
         throw Exception('No users found');
       }
 
-      EasyLoading.showSuccess('Users loaded successfully');
+      // EasyLoading.showSuccess('Users loaded successfully');
     } catch (e) {
       EasyLoading.showError(e.toString());
     } finally {
@@ -114,8 +115,6 @@ class ProviderClass extends ChangeNotifier {
       notifyListeners();
     }
   }
-
-  
 
   clearValues() {
     emailController.clear();

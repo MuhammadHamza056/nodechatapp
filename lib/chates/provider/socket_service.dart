@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutternode/chates/models/message_model.dart';
 import 'package:flutternode/constant/file_upload_service.dart';
 import 'package:flutternode/constant/hive_services.dart';
 import 'package:flutternode/utils/chat_status.dart';
@@ -10,20 +11,20 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 class SocketService extends ChangeNotifier {
   late io.Socket socket;
   //final String _serverUrl = 'http://192.168.0.187:3000';
-  final String _serverUrl = 'http://172.17.2.20:3000';
+  final String _serverUrl = 'http://172.17.2.90:3000';
   //final String _serverUrl = 'https://node-1-i9yt.onrender.com';
 
   String? targetUserId;
   String? fileUrl;
+  List<MessageModel> usermessages = [];
 
   // Connection state variables
   bool isConnected = false;
   static const int _maxReconnectionAttempts = 5;
 
   // Message state variables
-  final List<Map<String, dynamic>> _messages = [];
   bool _isOtherUserTyping = false;
-  final Map<String, String> _latestMessages = {};
+  final Map<String, String> latestMessages = {};
   final Set<String> _onlineUsers = {};
   final Map<String, int> _unreadMessageCount = {};
   bool isOtherUserOnline = false;
@@ -31,9 +32,9 @@ class SocketService extends ChangeNotifier {
   final player = AudioPlayer();
 
   // Getters
-  List<Map<String, dynamic>> get messages => _messages;
+
   bool get isOtherUserTyping => _isOtherUserTyping;
-  String? getLatestMessage(String userId) => _latestMessages[userId];
+  String? getLatestMessage(String userId) => latestMessages[userId];
   bool isUserOnline(String userId) => _onlineUsers.contains(userId);
   int getUnreadMessageCount(String userId) => _unreadMessageCount[userId] ?? 0;
 
@@ -196,22 +197,66 @@ class SocketService extends ChangeNotifier {
     });
   }
 
+  void loadLastMessage(String user1, String user2) {
+    final lastMessage = HiveService.getLastMessage(user1, user2);
+    if (lastMessage != null) {
+      latestMessages[user1] = lastMessage.text.toString();
+      notifyListeners();
+    }
+  }
+
   // Message handling
-  void addMessages(data) {
-    messages.add(Map<String, dynamic>.from(data));
+  void addMessages(Map<String, dynamic> data) {
+    debugPrint('📥 saving message to local state');
+
     final fromUserId = data['from'];
-    final messageText = data['message'];
+    final toUserId = data['to'];
+    final messageText = data['message'] ?? '';
+    final timestamp =
+        DateTime.tryParse(data['timestamp'] ?? '') ?? DateTime.now();
+    final messageType = data['messageType'] ?? 'text';
+    final fileUrl = data['fileUrl'];
+    final localPath = data['localPath'];
+    final status = data['status'] ?? 'sent';
+    final currentUserId = HiveService.getTokken().toString();
 
-    // Save latest message
-    _latestMessages[fromUserId] = messageText;
+    // Update latest message
+    latestMessages[fromUserId] = messageText;
 
-    // Update unread count if message is from another user
-    if (fromUserId != HiveService.getTokken().toString()) {
+    final msg = MessageModel(
+      sender: fromUserId,
+      text: messageText,
+      timestamp: timestamp,
+      status: status,
+      receiver: toUserId,
+      messageType: messageType,
+      fileUrl: fileUrl,
+      localPath: localPath,
+    );
+
+    // ✅ Save message only once using consistent key
+    HiveService.saveMessage(fromUserId, toUserId, msg);
+    debugPrint('✅ Message saved: $msg');
+
+    // ✅ Load latest message from Hive
+    loadLastMessage(fromUserId, toUserId);
+
+    // 🔁 Load after save
+    loadMessages(fromUserId, toUserId);
+
+    // Update unread count
+    if (fromUserId != currentUserId) {
       _unreadMessageCount[fromUserId] =
           (_unreadMessageCount[fromUserId] ?? 0) + 1;
     }
 
     notifyListeners();
+  }
+
+  //THIS IS THE FUNCTION TO LOAD THE MESSAGES
+  void loadMessages(String user1, String user2) {
+    usermessages = HiveService.getMessages(user1, user2);
+    notifyListeners(); // So the UI rebuilds
   }
 
   // Message sending

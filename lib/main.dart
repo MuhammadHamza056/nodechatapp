@@ -11,8 +11,8 @@ import 'package:provider/provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await HiveService.init();
-  configLoading();
 
+  configLoading();
   runApp(const MyApp());
 }
 

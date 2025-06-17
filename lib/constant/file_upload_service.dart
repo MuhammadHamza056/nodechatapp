@@ -50,7 +50,7 @@ class FileUploadService {
         });
 
         var response = await dio.post(
-          'http://172.17.2.20:3000/users/upload',
+          'http://172.17.2.90:3000/users/upload',
           data: formData,
           onSendProgress: (sent, total) {
             double progress = (sent / total) * 100;
@@ -80,5 +80,4 @@ class FileUploadService {
       );
     }
   }
-  
 }

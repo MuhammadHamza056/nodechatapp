@@ -119,7 +119,11 @@ class LoginPage extends StatelessWidget {
                         if (provider.emailController.text.isNotEmpty &&
                             provider.passwordController.text.isNotEmpty) {
                           bool success = await provider.login();
-                          if (success) context.go('/dashboard');
+                          if (success) {
+                            context.go('/dashboard');
+                            provider.emailController.clear();
+                            provider.passwordController.clear();
+                          }
                         } else {
                           EasyLoading.showError('Please fill the fields above');
                         }

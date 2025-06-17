@@ -25,7 +25,15 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
-    ChatState.isChatScreenActive = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<SocketService>(context, listen: false);
+      // prov.loadMessages(widget.userId);
+      final user1 = HiveService.getTokken().toString();
+      final user2 = widget.userId;
+      provider.loadMessages(user1, user2);
+      ChatState.isChatScreenActive = true;
+    });
+
     super.initState();
   }
 
@@ -206,27 +214,15 @@ class _ChatPageState extends State<ChatPage> {
                   return ListView.builder(
                     reverse: true,
                     padding: const EdgeInsets.all(12),
-                    itemCount: provider.messages.length,
+                    itemCount: provider.usermessages.length,
                     itemBuilder: (context, index) {
                       final msg =
-                          provider.messages[provider.messages.length -
+                          provider.usermessages[provider.usermessages.length -
                               1 -
                               index];
-                      final from = provider.getStringFromDynamic(msg['from']);
-                      final fileName = provider.getStringFromDynamic(
-                        msg['fileName'],
-                      );
-                      final fileType = provider.getStringFromDynamic(
-                        msg['fileType'],
-                      );
-                      final fileUrl = provider.getStringFromDynamic(
-                        msg['fileUrl'],
-                      );
-                      final messageText = provider.getStringFromDynamic(
-                        msg['message'],
-                      );
 
-                      final isMe = from == HiveService.getTokken().toString();
+                      final isMe =
+                          msg.sender == HiveService.getTokken().toString();
 
                       return Align(
                         alignment:
@@ -254,45 +250,37 @@ class _ChatPageState extends State<ChatPage> {
                                       ? const Radius.circular(4)
                                       : const Radius.circular(16),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 2,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
                           ),
                           child: Column(
-                            spacing: 5,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // File message display
-                              if (fileType == 'image' && fileUrl.isNotEmpty)
+                              if (msg.messageType == 'image' &&
+                                  msg.fileUrl?.isNotEmpty == true)
                                 ImageMessageWidget(
-                                  fileUrl: '$imageUrl$fileUrl',
+                                  fileUrl: '$imageUrl${msg.fileUrl}',
                                   context: context,
                                   isMe: isMe,
                                 )
-                              else if (fileType == 'document' &&
-                                  fileName.isNotEmpty)
+                              else if (msg.messageType == 'document' &&
+                                  msg.localPath?.isNotEmpty == true)
                                 FileMessageWidget(
-                                  fileName: fileName,
-                                  fileUrl: fileUrl,
+                                  fileName: msg.messageType!,
+                                  fileUrl: msg.fileUrl!,
                                   isMe: isMe,
                                 )
-                              else
+                              else if (msg.text!.isNotEmpty)
                                 Text(
-                                  messageText,
+                                  msg.text!,
                                   style: TextStyle(
                                     color: isMe ? Colors.white : Colors.black87,
                                   ),
                                 ),
-
+                              const SizedBox(height: 4),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    provider.formatTimestamp(msg['timestamp']),
+                                    provider.formatTimestamp(msg.timestamp),
                                     style: TextStyle(
                                       color:
                                           isMe
@@ -301,16 +289,19 @@ class _ChatPageState extends State<ChatPage> {
                                       fontSize: 10,
                                     ),
                                   ),
-                                  if (isMe) ...[
-                                    const SizedBox(width: 6),
-                                    Icon(
-                                      provider.getStatusIcon(msg['status']),
-                                      size: 14,
-                                      color: provider.getStatusColor(
-                                        msg['status'],
+                                  const SizedBox(
+                                    width: 4,
+                                  ), // spacing between timestamp and status
+                                  if (isMe) // ✅ Show status only for sender
+                                    Text(
+                                      msg.status
+                                          .toString(), // e.g., 'sent', 'delivered', 'read'
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.6),
+                                        fontSize: 10,
+                                        fontStyle: FontStyle.italic,
                                       ),
                                     ),
-                                  ],
                                 ],
                               ),
                             ],
@@ -419,6 +410,7 @@ class _ChatPageState extends State<ChatPage> {
                             context,
                             listen: false,
                           ).sendMessage(widget.userId, message);
+
                           Provider.of<ProviderClass>(
                             context,
                             listen: false,

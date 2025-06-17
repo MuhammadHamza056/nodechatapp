@@ -1,5 +1,7 @@
-
+import 'package:flutter/material.dart';
+import 'package:flutternode/chates/models/message_model.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
 class HiveService {
   static String userId = 'USERID';
   static String empId = 'EMPID';
@@ -14,10 +16,13 @@ class HiveService {
   static String role = "ROLE";
   static String code = "CODE";
   static Box? _box;
+  static Box? _chatBox;
 
   static Future<void> init() async {
     await Hive.initFlutter();
     _box = await Hive.openBox('SessionDetails');
+    Hive.registerAdapter(MessageModelAdapter());
+    _chatBox = await Hive.openBox('ChatBox');
   }
 
   static void putUserId(int value) {
@@ -114,6 +119,69 @@ class HiveService {
 
   static bool getUserLogin() {
     return _box!.get(login) ?? false;
+  }
+
+  //THIS IS THE FUNXTINO TO HAVE THE CHAT KEYS
+  static String getChatKey(String user1, String user2) {
+    final sorted = [user1, user2]..sort();
+    return '${sorted[0]}_${sorted[1]}';
+  }
+
+  //FUNCTINO TO SAVE THE CHATS OF THE USER
+  static void saveMessage(String user1, String user2, MessageModel message) {
+    final chatKey = getChatKey(user1, user2);
+
+    final raw = _chatBox?.get(chatKey);
+    List<MessageModel> messages = [];
+
+    if (raw is List && raw.every((e) => e is MessageModel)) {
+      messages = raw.cast<MessageModel>();
+    }
+
+    messages.add(message);
+    _chatBox?.put(chatKey, messages);
+
+    debugPrint('✅ Saved message for $chatKey');
+  }
+
+  //THIS IS THE FUNCTION TO GET THE MESSAGES FOR MTHE HIVE
+  static List<MessageModel> getMessages(String user1, String user2) {
+    final chatKey = getChatKey(user1, user2);
+    final raw = _chatBox?.get(chatKey);
+
+    if (raw is List && raw.every((e) => e is MessageModel)) {
+      final messages = raw.cast<MessageModel>();
+      for (final message in messages) {
+        debugPrint('📩 Message: ${message.text.toString()}');
+      }
+      return messages;
+    }
+
+    debugPrint('❌ No messages found for $chatKey');
+    return [];
+  }
+
+  //THIS IS THE FUNCTION TO GET THE LATEST MESSAGE FROM THE HIVE
+  static MessageModel? getLastMessage(String user1, String user2) {
+    final chatKey = getChatKey(user1, user2);
+    final raw = _chatBox?.get(chatKey);
+
+    if (raw is List && raw.every((e) => e is MessageModel)) {
+      final messages = raw.cast<MessageModel>();
+      if (messages.isNotEmpty) {
+        return messages.last;
+      }
+    }
+
+    return null; // No messages found
+  }
+
+  static void clearMessages(String chatUserId) {
+    _chatBox!.delete(chatUserId);
+  }
+
+  static void clearAllMessages() {
+    _chatBox!.clear();
   }
 
   static deleteHive() async {

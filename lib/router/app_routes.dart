@@ -7,13 +7,12 @@ import 'package:flutternode/dashboard/pages/dashboard.dart';
 import 'package:go_router/go_router.dart';
 
 final router = GoRouter(
-  initialLocation: '/dashboard',
   routes: [
     GoRoute(
-      path: '/login',
+      path: '/',
       name: 'login',
       builder: (context, state) {
-        return HiveService.getUserLogin() ? HomePage() : LoginPage();
+        return HiveService.getUserLogin() ? DashboardScreen() : LoginPage();
       },
     ),
 
