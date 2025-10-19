@@ -48,6 +48,7 @@ dependencies:
   file_picker: ^10.1.5
   dio: ^5.8.0+1
   hive: ^2.2.3
+  uuid: ^4.0.0
   path: ^1.9.1
   cached_network_image: ^3.3.1
   photo_view: ^0.14.0

@@ -12,6 +12,7 @@ import 'package:flutternode/widget/file_widget.dart';
 import 'package:flutternode/widget/image_widget.dart';
 import 'package:flutternode/widget/typing_dots.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 class ChatPage extends StatefulWidget {
   final String userName;
@@ -293,14 +294,21 @@ class _ChatPageState extends State<ChatPage> {
                                     width: 4,
                                   ), // spacing between timestamp and status
                                   if (isMe) // ✅ Show status only for sender
-                                    Text(
-                                      msg.status
-                                          .toString(), // e.g., 'sent', 'delivered', 'read'
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.6),
-                                        fontSize: 10,
-                                        fontStyle: FontStyle.italic,
-                                      ),
+                                    Consumer<SocketService>(
+                                      builder: (context, provider, child) {
+                                        return Text(
+                                          provider.getMessageStatus(
+                                            msg.messageId.toString(),
+                                          ), // e.g., 'sent', 'delivered', 'read'
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(
+                                              0.6,
+                                            ),
+                                            fontSize: 10,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        );
+                                      },
                                     ),
                                 ],
                               ),
@@ -409,7 +417,7 @@ class _ChatPageState extends State<ChatPage> {
                           Provider.of<SocketService>(
                             context,
                             listen: false,
-                          ).sendMessage(widget.userId, message);
+                          ).sendMessage(widget.userId, message, Uuid().v4());
 
                           Provider.of<ProviderClass>(
                             context,

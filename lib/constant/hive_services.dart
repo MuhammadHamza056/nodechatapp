@@ -143,6 +143,8 @@ class HiveService {
 
     debugPrint('✅ Saved message for $chatKey');
   }
+  
+
 
   //THIS IS THE FUNCTION TO GET THE MESSAGES FOR MTHE HIVE
   static List<MessageModel> getMessages(String user1, String user2) {
