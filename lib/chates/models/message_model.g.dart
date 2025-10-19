@@ -17,12 +17,13 @@ class MessageModelAdapter extends TypeAdapter<MessageModel> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return MessageModel(
-      sender: fields[0] as String,
-      receiver: fields[6] as String,
-      text: fields[1] as String,
+      sender: fields[0] as String?,
+      receiver: fields[6] as String?,
+      text: fields[1] as String?,
       timestamp: fields[2] as DateTime,
-      messageType: fields[3] as String,
-      status: fields[7] as String,
+      messageType: fields[3] as String?,
+      status: fields[7] as String?,
+      messageId: fields[8] as String?,
       fileUrl: fields[4] as String?,
       localPath: fields[5] as String?,
     );
@@ -31,7 +32,7 @@ class MessageModelAdapter extends TypeAdapter<MessageModel> {
   @override
   void write(BinaryWriter writer, MessageModel obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.sender)
       ..writeByte(1)
@@ -47,7 +48,9 @@ class MessageModelAdapter extends TypeAdapter<MessageModel> {
       ..writeByte(6)
       ..write(obj.receiver)
       ..writeByte(7)
-      ..write(obj.status);
+      ..write(obj.status)
+      ..writeByte(8)
+      ..write(obj.messageId);
   }
 
   @override
